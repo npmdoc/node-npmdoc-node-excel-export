@@ -1,0 +1,321 @@
+<html><head></head><body><div class="apidocDiv">
+<style>
+/*csslint
+*/
+.apidocDiv {
+    background: #fff;
+    font-family: Arial, Helvetica, sans-serif;
+}
+.apidocDiv a[href] {
+    color: #33f;
+    font-weight: bold;
+    text-decoration: none;
+}
+.apidocDiv a[href]:hover {
+    text-decoration: underline;
+}
+.apidocCodeCommentSpan {
+    background: #bbf;
+    color: #000;
+    display: block;
+}
+.apidocCodeKeywordSpan {
+    color: #d00;
+    font-weight: bold;
+}
+.apidocCodePre {
+    background: #eef;
+    border: 1px solid;
+    color: #777;
+    padding: 5px;
+    white-space: pre-wrap;
+}
+.apidocFooterDiv {
+    margin-top: 20px;
+    text-align: center;
+}
+.apidocModuleLi {
+    margin-top: 10px;
+}
+.apidocSectionDiv {
+    border-top: 1px solid;
+    margin-top: 20px;
+}
+.apidocSignatureSpan {
+    color: #777;
+    font-weight: bold;
+}
+</style>
+<h1>api documentation for
+    <a href="https://github.com/andreyan-andreev/node-excel-export#readme">node-excel-export (v1.4.1)</a>
+</h1>
+<h4>Node-Excel-Export</h4>
+<div class="apidocSectionDiv"><a href="#apidoc.tableOfContents" id="apidoc.tableOfContents"><h1>table of contents</h1></a><ol>
+
+    <li class="apidocModuleLi"><a href="#apidoc.module.node-excel-export">module node-excel-export</a><ol>
+
+        <li>
+
+            <a class="apidocElementLiA" href="#apidoc.element.node-excel-export.buildExport">
+            function <span class="apidocSignatureSpan">node-excel-export.</span>buildExport
+            <span class="apidocSignatureSpan">(!(params instanceof Array)</span>
+            </a>
+
+        </li>
+
+        <li>
+
+            <span class="apidocSignatureSpan">object <span class="apidocSignatureSpan">node-excel-export.</span>excel</span>
+
+        </li>
+
+    </ol></li>
+
+    <li class="apidocModuleLi"><a href="#apidoc.module.node-excel-export.excel">module node-excel-export.excel</a><ol>
+
+        <li>
+
+            <a class="apidocElementLiA" href="#apidoc.element.node-excel-export.excel.build">
+            function <span class="apidocSignatureSpan">node-excel-export.excel.</span>build
+            <span class="apidocSignatureSpan">(array)</span>
+            </a>
+
+        </li>
+
+        <li>
+
+            <a class="apidocElementLiA" href="#apidoc.element.node-excel-export.excel.parse">
+            function <span class="apidocSignatureSpan">node-excel-export.excel.</span>parse
+            <span class="apidocSignatureSpan">(mixed, options)</span>
+            </a>
+
+        </li>
+
+    </ol></li>
+
+</ol></div>
+
+<div class="apidocSectionDiv">
+<h1><a href="#apidoc.module.node-excel-export" id="apidoc.module.node-excel-export">module node-excel-export</a></h1>
+
+
+    <h2>
+        <a href="#apidoc.element.node-excel-export.buildExport" id="apidoc.element.node-excel-export.buildExport">
+        function <span class="apidocSignatureSpan">node-excel-export.</span>buildExport
+        <span class="apidocSignatureSpan">(!(params instanceof Array)</span>
+        </a>
+    </h2>
+    <ul>
+    <li>description and source-code<pre class="apidocCodePre">params =&gt; {
+  if (!(params instanceof Array)) throw 'buildExport expects an array'
+
+  let sheets = []
+  params.forEach(function (sheet, index) {
+    let specification = sheet.specification
+    let dataset = sheet.data
+    let sheet_name = sheet.name || 'Sheet' + index + 1
+    let data = []
+    let merges = sheet.merges
+    let config = {
+      cols: []
+    }
+
+    if (!specification || !dataset) throw 'missing specification or dataset.'
+
+    if (sheet.heading) {
+      sheet.heading.forEach(function (row) {
+        data.push(row)
+      })
+    }
+
+    //build the header row
+    let header = []
+    for (let col in specification) {
+      header.push({
+        value: specification[col].displayName,
+        style: specification[col].headerStyle || ''
+      })
+
+      if (specification[col].width) {
+        if (Number.isInteger(specification[col].width)) {
+          config.cols.push({ wpx: specification[col].width })
+        } else if (Number.isInteger(parseInt(specification[col].width))) {
+          config.cols.push({ wch: specification[col].width })
+        } else {
+          throw 'Provide column width as a number'
+        }
+      } else {
+        config.cols.push({})
+      }
+
+    }
+    data.push(header) //Inject the header at 0
+
+    dataset.forEach(record =&gt; {
+      let row = []
+      for (let col in specification) {
+        let cell_value = record[col]
+
+        if (specification[col].cellFormat &amp;&amp; typeof specification[col].cellFormat == 'function') {
+          cell_value = specification[col].cellFormat(record[col], record)
+        }
+
+        if (specification[col].cellStyle &amp;&amp; typeof specification[col].cellStyle == 'function') {
+          cell_value = {
+            value: cell_value,
+            style: specification[col].cellStyle(record[col], record)
+          }
+        } else if (specification[col].cellStyle) {
+          cell_value = {
+            value: cell_value,
+            style: specification[col].cellStyle
+          }
+        }
+
+
+        // TODO: REMOVE
+        // if (specification[col].mergeGroup) {
+        //   cell_value.merge = specification[col].mergeGroup
+        // }
+
+        row.push(cell_value) // Push new cell to the row
+      }
+      data.push(row) // Push new row to the sheet
+    })
+
+    sheets.push({
+      name: sheet_name,
+      data: data,
+      merge: merges,
+      config: config
+    })
+
+  })
+
+  return excel.build(sheets)
+
+}</pre></li>
+    <li>example usage<pre class="apidocCodePre">...
+{ start: { row: 1, column: 1 }, end: { row: 1, column: 10 } },
+{ start: { row: 2, column: 1 }, end: { row: 2, column: 5 } },
+{ start: { row: 2, column: 6 }, end: { row: 2, column: 10 } }
+]
+
+// Create the excel report.
+// This function will return Buffer
+const report = excel.<span class="apidocCodeKeywordSpan">buildExport</span>(
+[ // &lt;- Notice that this is an array. Pass multiple sheets to create multi sheet report
+  {
+    name: 'Report', // &lt;- Specify sheet name (optional)
+    heading: heading, // &lt;- Raw heading array (optional)
+    merges: merges, // &lt;- Merge cell ranges
+    specification: specification, // &lt;- Report specification
+    data: dataset // &lt;-- Report data
+...</pre></li>
+    </ul>
+
+
+
+
+</div>
+
+<div class="apidocSectionDiv">
+<h1><a href="#apidoc.module.node-excel-export.excel" id="apidoc.module.node-excel-export.excel">module node-excel-export.excel</a></h1>
+
+
+    <h2>
+        <a href="#apidoc.element.node-excel-export.excel.build" id="apidoc.element.node-excel-export.excel.build">
+        function <span class="apidocSignatureSpan">node-excel-export.excel.</span>build
+        <span class="apidocSignatureSpan">(array)</span>
+        </a>
+    </h2>
+    <ul>
+    <li>description and source-code<pre class="apidocCodePre">build = function (array) {
+  let defaults = {
+    bookType:'xlsx',
+    bookSST: false,
+    type:'binary'
+  };
+  let wb = new Workbook();
+  array.forEach(function(worksheet) {
+    let name = worksheet.name || 'Sheet';
+    let data = sheet_from_array_of_arrays(worksheet.data || [], worksheet.merge);
+    wb.SheetNames.push(name);
+    wb.Sheets[name] = data;
+
+    if(worksheet.config.cols) {
+      wb.Sheets[name]['!cols'] = worksheet.config.cols
+    }
+
+  });
+
+  let data = XLSX.write(wb, defaults);
+  if(!data) return false;
+  let buffer = new Buffer(data, 'binary');
+  return buffer;
+
+}</pre></li>
+    <li>example usage<pre class="apidocCodePre">...
+      data: data,
+      merge: merges,
+      config: config
+    })
+
+  })
+
+  return excel.<span class="apidocCodeKeywordSpan">build</span>(sheets)
+
+}
+
+module.exports = {
+  buildExport
+}
+...</pre></li>
+    </ul>
+
+
+
+    <h2>
+        <a href="#apidoc.element.node-excel-export.excel.parse" id="apidoc.element.node-excel-export.excel.parse">
+        function <span class="apidocSignatureSpan">node-excel-export.excel.</span>parse
+        <span class="apidocSignatureSpan">(mixed, options)</span>
+        </a>
+    </h2>
+    <ul>
+    <li>description and source-code<pre class="apidocCodePre">parse = function (mixed, options) {
+  let ws;
+  if(typeof mixed === 'string') ws = XLSX.readFile(mixed, options);
+  else ws = XLSX.read(mixed, options);
+  return _.map(ws.Sheets, function(sheet, name) {
+    return {name: name, data: XLSX.utils.sheet_to_json(sheet, {header: 1, raw: true})};
+  });
+}</pre></li>
+    <li>example usage<pre class="apidocCodePre">...
+
+'use strict';
+
+const XLSX = require('xlsx-style');
+
+function datenum(v, date1904) {
+if(date1904) v += 1462;
+let epoch = Date.<span class="apidocCodeKeywordSpan">parse</span>(v);
+return (epoch - new Date(Date.UTC(1899, 11, 30))) / (24 * 60 * 60 * 1000);
+}
+
+function sheet_from_array_of_arrays(data, merges) {
+let ws = {};
+let range = {s: {c:10000000, r:10000000}, e: {c:0, r:0}};
+for(let R = 0; R !== data.length; ++R) {
+...</pre></li>
+    </ul>
+
+
+</div>
+
+<div class="apidocFooterDiv">
+    [ this document was created with
+    <a href="https://github.com/kaizhu256/node-utility2" target="_blank">utility2</a>
+    ]
+</div>
+</div>
+</body></html>
